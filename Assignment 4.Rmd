@@ -1,0 +1,223 @@
+---
+title: "Assignment 4"
+author: "Kyle Walker"
+date: "9/24/2019"
+output: 
+        #pdf_document: default
+        rmarkdown:: github_document
+---
+
+#### 1. Compute the follows using %>% operator. Notice that
+##### • x %>%\ f = f(x),
+##### • x %>% f %>% g = g(f(x)) and
+##### • x %>% f(y) = f(x,y)
+##### a. sin(2019)
+```{r}
+library(dplyr)
+2019 %>% 
+  sin()
+```
+
+##### b. sin(cos(2019))
+```{r}
+2019 %>% 
+  cos() %>% 
+    sin()
+```
+
+##### c. sin(cos(tan(log(2019))))
+```{r}
+2019 %>% 
+  log() %>% 
+    tan() %>% 
+      cos() %>% 
+        sin()
+```
+
+##### d. log2(2019)
+```{r}
+2019 %>% 
+  log2()
+```
+
+#### 2. Fixing the SEX, AGE and TRAV_SP following the steps in Assignment 2 (This time, do it on the entire dataset instead of the sample dataset).
+```{r}
+library(readxl)
+library(stringr)
+c2015 <- read_excel("C:/Users/student/Documents/Senior Year/MATH 421/Assignment 2/c2015.xlsx")
+#Fixing Sex
+c2015$SEX[is.na(c2015$SEX)]<- "Female"
+#Fixing Age
+c2015$AGE[c2015$AGE == 'Less than 1'] <- "0"
+c2015$AGE <- as.numeric(c2015$AGE)
+c2015$AGE[is.na(c2015$AGE)] <- mean(c2015$AGE)
+#Fixing Trav_Sp
+c2015$TRAV_SP <- str_replace(c2015$TRAV_SP, " MPH", "")
+c2015$TRAV_SP <- str_replace(c2015$TRAV_SP, "Not Rep", "")
+c2015$TRAV_SP <- str_replace(c2015$TRAV_SP, "Unknown", "")
+c2015$TRAV_SP <- as.numeric(c2015$TRAV_SP)
+c2015 = c2015[!(is.na(c2015$TRAV_SP)),]
+```
+
+####3. Calculate the average age and average speed of female in the accident happened in the weekend.
+##### Notice: These questions are to practice select_if and summarise_if, summarise_all. . . functions in dplyr
+```{r}
+c2015 %>%
+  filter(SEX == "Female", DAY_WEEK %in% c("Friday", "Saturday", "Sunday")) %>% 
+    summarize_at(vars(AGE, TRAV_SP), mean, na.rm=T)
+```
+
+#### 4. Use select_if and is.numeric functions to create a dataset with only numeric variables. Print out the names of all numeric variables
+```{r}
+c2015 %>% 
+  select_if(is.numeric) %>% 
+    names
+```
+
+#### 5. Calculate the mean of all numeric variables using select_if and summarise_all
+```{r}
+c2015 %>% 
+  select_if(is.numeric) %>% 
+    summarize_all(mean, na.rm = T)
+```
+
+#### 6. We can shortcut 3 and 4 by using summarise_if: Use summarise_if to Calculate the mean of all numeric variables. (You may need to use na.rm = TRUE to ignore the NAs)
+```{r}
+c2015 %>% 
+  summarize_if(is.numeric, mean, na.rm=T)
+```
+
+#### 7. Use summarise_if to calculate the median of all numeric variables.
+```{r}
+c2015 %>% 
+  summarize_if(is.numeric, median, na.rm=T)
+```
+
+#### 8. Use summarise_if to calculate the standard deviation of all numeric variables. (sd function for standard deviation)
+```{r}
+c2015 %>% 
+  summarize_if(is.numeric, sd, na.rm=T)
+```
+
+#### 9. Use summarise_if to calculate the number of missing values for each numeric variables. Hint: Use ~sum(is.na(.))
+```{r}
+c2015 %>% 
+  summarize_if(is.numeric, ~sum(is.na(.)))
+```
+
+#### 10. Calculate the log of the average for each numeric variable.
+```{r}
+c2015 %>% 
+  summarize_if(is.numeric, mean, na.rm=T) %>% 
+    log()
+```
+
+#### 11. You will notice that there is one NA is produced in 10. Fix this by calculating the log of the absolute value average for each numeric variable.
+```{r}
+c2015 %>% 
+  summarize_if(is.numeric, mean, na.rm=T) %>% 
+    abs() %>% 
+      log()
+```
+
+#### 12. Calculate the number of missing values for each categorical variables using summarise_if
+```{r}
+c2015 %>% 
+  summarize_if(is.character, ~sum(is.na(.)))
+```
+
+#### 13. Calculate the number of missing values for each categorical variables using summarise_all
+```{r}
+c2015 %>% 
+  select_if(is.character) %>% 
+    summarize_all(~sum(is.na(.)))
+```
+
+#### 14. Calculate the number of states in the dataset. **Hint: You can use length(table())
+```{r}
+c2015 %>%
+  summarize_at(vars(STATE), ~length(table(.)))
+```
+
+#### 15. Calculate the number of uniques values for each categorical variables using summarise_if.
+```{r}
+c2015 %>% 
+  summarize_if(is.character, ~length(table(.)))
+```
+
+#### 16. Calculate the number of uniques values for each categorical variables using summarise_all.
+```{r}
+c2015 %>% 
+  select_if(is.character) %>% 
+    summarize_all(~length(table(.)))
+```
+
+#### 17. Print out the names of all variables that have more than 30 distinct values
+```{r}
+c2015 %>% 
+  summarize_all(~length(table(.))>30) %>% 
+    names
+```
+
+#### 18. Print out the names of all categorical variables that more than 30 distinct values
+```{r}
+c2015 %>% 
+  select_if(is.character) %>% 
+    select_if(~length(table(.)) > 30) %>% 
+      names
+```
+
+#### 19. Print out the names of all numeric variables that has the maximum values greater than 30
+```{r}
+c2015 %>% 
+  select_if(is.numeric) %>%
+    select_if(~max(.,na.rm=T) > 30) %>% 
+      names
+```
+
+#### 20. Calculate the mean of all numeric variables that has the maximum values greater than 30 using ‘summarise_if’
+```{r}
+c2015 %>%
+    select_if(~max(., na.rm=T) > 30) %>% 
+      summarize_if(is.numeric, mean, na.rm = T)
+```
+
+#### 21. Calculate the mean of all numeric variables that has the maximum values greater than 30 using ‘summarise_all’
+```{r}
+ c2015 %>%
+  select_if(is.numeric) %>% 
+    select_if(~max(.,na.rm=T) > 30) %>% 
+      summarize_all(~mean(.,na.rm=T))
+```
+
+#### 22. Create a dataset containing variables with standard deviation greater than 10. Call this data d1
+```{r}
+d1 <- c2015 %>% 
+    select_if(is.numeric) %>% 
+      select_if(~sd(.,na.rm=T) >10)
+d1
+```
+
+#### 23. Centralizing a variable is subtract it by its mean. Centralize the variables of d1 using mutate_all. Check the means of all centralized variables to confirm that they are all zeros.
+```{r}
+d1 %>% 
+  select_if(is.numeric) %>% 
+    mutate_all(~(.) - mean(.,na.rm=T)) %>% 
+      summarize_all(~mean(.,na.rm=T))
+```
+
+#### 24. Standarizing a variable is to subtract it to its mean and then divide by its standard deviation. Standardize the variables of d1 using mutate_all. Check the means and standard deviation of all centralized variables to confirm that they are all zeros (for the means) and ones (for standard deviation).
+```{r}
+#TRY TO DO IN ONE SUMMARIZE WITH A LIST
+d1 %>% 
+  select_if(is.numeric) %>% 
+    mutate_all(~(. - mean(.,na.rm=T))/ sd(.,na.rm=T)) %>% 
+      summarize_all(~mean(.,na.rm=T))
+
+d1 %>% 
+  select_if(is.numeric) %>% 
+    mutate_all(~(. - mean(.,na.rm=T))/ sd(.,na.rm=T)) %>% 
+      summarize_all(~sd(.,na.rm=T))
+```
+
+
